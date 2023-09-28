@@ -1,6 +1,35 @@
 # Lazarus_Unpacker
 PV_Unpacker - simple pure Pascal library to unpack various archives (ZIP, RAR, LZMA, TAR...)
 
+## Supported formats ##
+- .ZIP, .JAR, .CBZ, .DOCX (store, deflate, lzma, bzip2)
+- .RAR, .CBR (version 4 and 5; store)
+- .TAR, .CBT
+- .ARJ
+- BlacHole .BH
+- .BIG
+- BGA .BZA/.GZA
+- .CPIO
+- .DPK
+- .DRS
+- .FTG
+- .GZIP, .GZ
+- .BZIP2, .BZ2
+- .HA
+- .LBR
+- .LZH, .LHA
+- .LZ, .LZMA
+- .PCK
+- Homm3 .LOD
+- Quake .PAK
+- Doom .WAD
+- Quake .WAD
+
+## Unsupported ###
+- encrypted archives
+- RAR files that use method different than "store"
+- ARJ, LZH that use method different than "store"
+
 ## Usage ###
     use PV_Unpacker;
     ...
