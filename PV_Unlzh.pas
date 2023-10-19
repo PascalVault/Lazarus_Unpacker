@@ -108,11 +108,12 @@ begin
 
       FFiles[FCount].Name := FName;
       FFiles[FCount].Offset := FStream.Position;
-      FFiles[FCount].PackedSize := Head.UnPackedSize;
+      FFiles[FCount].PackedSize := Head.PackedSize;
       FFiles[FCount].UnpackedSize := Head.UnpackedSize;
-      //FFiles[FCount].PackMethod := pmStore;
 
-      FFiles[FCount].PackMethod := pmLha;
+      if Head.Compression = ord('0')      then FFiles[FCount].PackMethod := pmStore
+      else if Head.Compression = ord('1') then FFiles[FCount].PackMethod := pmLh1
+      else                                     FFiles[FCount].PackMethod := pmOther;
 
       FStream.Position := FStream.Position + Head.PackedSize;
       Inc(FCount);

@@ -5,15 +5,15 @@ unit PV_Unpack;
 //PV Unpack
 //https://github.com/PascalVault
 //Licence: MIT
-//Last update: 2023-09-28
+//Last update: 2023-10-19
 
 interface
 
 uses
-  Classes, SysUtils, ZStream, bzip2stream, ULZMADecoder, DIalogs;
+  Classes, SysUtils, ZStream, bzip2stream, ULZMADecoder, LzhHuff, Dialogs;
 
 type
-  TPackMethod = (pmStore, pmDeflate, pmBzip2, pmLha, pmLzma, pmOther);
+  TPackMethod = (pmStore, pmDeflate, pmBzip2, pmLh1, pmLzma, pmT64, pmRff, pmOther);
 
   TFile = record
     Name: String;
@@ -21,6 +21,7 @@ type
     UnpackedSize: Cardinal;
     Offset: Cardinal;
     PackMethod: TPackMethod;
+    Extra: Cardinal;
   end;
 
   { TUnpack }
@@ -86,6 +87,9 @@ var Dec: TDecompressionStream;
     Buf: array of Byte;
     Lzma: TLZMADecoder;
     Prop: array[0..4] of Byte;
+    Temp: Word;
+    i: Integer;
+    Lzh: TLZH;
 begin
   try
     Result := True;
@@ -97,8 +101,27 @@ begin
       ReadLen := Str.CopyFrom(Dec, FFiles[Index].UnpackedSize);
       Dec.Free;
     end
-    else if FFiles[Index].PackMethod = pmLha then begin
-      //TO DO
+    else if FFiles[Index].PackMethod = pmLh1 then begin
+
+      Lzh := TLZH.Create(FStream, Str);
+      Lzh.Decode(FFiles[Index].UnpackedSize);
+      Lzh.Free;
+
+    end
+    else if FFiles[Index].PackMethod = pmT64 then begin
+      Temp := FFiles[Index].Extra; //Loading Offset
+      Str.Write(Temp, 2);
+      Str.CopyFrom(FStream, FFiles[Index].PackedSize);
+    end
+    else if FFiles[Index].PackMethod = pmRff then begin
+      SetLength(Buf, 256);
+      ReadLen := FStream.Read(Buf[0], 256);
+
+      for i:=0 to ReadLen do Buf[i] := Buf[i] xor (i shr 1);
+
+      Str.Write(Buf[0], ReadLen);
+
+      Str.CopyFrom(FStream, FFiles[Index].PackedSize-ReadLen);
     end
     else if FFiles[Index].PackMethod = pmBzip2 then begin
        Dec2 := TDecompressBzip2Stream.Create(FStream);
