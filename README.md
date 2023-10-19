@@ -27,11 +27,13 @@ https://github.com/PascalVault/Lazarus_Packer
 - Quake .PAK
 - Doom .WAD
 - Quake .WAD
+and more!
 
 ## Unsupported ###
 - encrypted archives
 - RAR files that use method different than "store"
-- ARJ, LZH that use method different than "store"
+- ARJ that use method different than "store"
+- LZH that use method different than "store" and "lh1"
 
 ## Usage ###
     use PV_Unpacker;
