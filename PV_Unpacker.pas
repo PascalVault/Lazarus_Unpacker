@@ -47,7 +47,8 @@ implementation
 uses PV_Unzip, PV_Untar, PV_Unrar, PV_Unrar5, PV_Unlzh, PV_Unpak, PV_Ungzip, PV_Unbh, PV_Unwad, PV_Unwad2,
      PV_Unbzip2, PV_Unbza, PV_Unlod, PV_Unarj, PV_Unftg, PV_Undrs, PV_Unlzma, PV_Unbin, PV_Ungrp, PV_Ungw3, PV_Unhog,
      PV_Unbig, PV_Uncpio, PV_Undpk, PV_Unha, PV_Unlbr, PV_Unpck, PV_Unalz, PV_Unegg, PV_Unlzx, PV_Unrpm, PV_Unt64,
-     PV_UnRsc, PV_UnRff, PV_UnPcl, PV_UnLib, PV_UnLib2, PV_UnGx, PV_UnEpf, PV_UnDlt, PV_UnDat;
+     PV_UnRsc, PV_UnRff, PV_UnPcl, PV_UnLib, PV_UnLib2, PV_UnGx, PV_UnEpf, PV_UnDlt, PV_UnDat, PV_Unxxe, PV_Unuue,
+     PV_Unarc, PV_Unzoo, PV_Unyenc;
 
 function TUnpacker.Detect(Buff: array of Byte): TUnpackClass;
 
@@ -129,6 +130,11 @@ begin
 
   if (Buff[  0] = ord('D')) and (Buff[  1] = ord('H')) and (Buff[ 2] = ord('F')) then Exit(TUnHog);
 
+  if (Buff[  0] = ord('Z')) and (Buff[  1] = ord('O')) and (Buff[ 2] = ord('O')) then Exit(TUnZOO);
+
+  if (Buff[  0] = ord('U')) and (Buff[  1] = ord('U')) and (Buff[ 2] = ord('E')) then Exit(TUnUUE);
+
+  if (Buff[  0] = ord('X')) and (Buff[  1] = ord('X')) and (Buff[ 2] = ord('E')) then Exit(TUnXXE);
 
   if (Buff[  0] = ord('D')) and (Buff[  1] = ord('A')) and (Buff[ 2] = ord('T')) then Exit(TUnDat);
 
@@ -141,6 +147,8 @@ begin
   if (Buff[  0] = ord('E')) and (Buff[  1] = ord('A')) and (Buff[  2] = ord('L')) and (Buff[  3] = ord('I')) then Exit(TUnLib2);
 
   if (Buff[  0] = ord('R')) and (Buff[  1] = ord('F')) and (Buff[ 2] = ord('F')) and (Buff[ 3] = $1A) then Exit(TUnRff);
+
+  if (Buff[  0] = ord('=')) and (Buff[  1] = ord('y')) and (Buff[  2] = ord('b')) and (Buff[  3] = ord('e')) then Exit(TUnYenc);
 
 
   if (Buff[  0] = ord('P')) and (Buff[  1] = ord('R')) and (Buff[  2] = ord('O')) and (Buff[  3] = ord('L')) then Exit(TUnRsc);
