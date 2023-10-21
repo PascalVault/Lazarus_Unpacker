@@ -48,7 +48,7 @@ uses PV_Unzip, PV_Untar, PV_Unrar, PV_Unrar5, PV_Unlzh, PV_Unpak, PV_Ungzip, PV_
      PV_Unbzip2, PV_Unbza, PV_Unlod, PV_Unarj, PV_Unftg, PV_Undrs, PV_Unlzma, PV_Unbin, PV_Ungrp, PV_Ungw3, PV_Unhog,
      PV_Unbig, PV_Uncpio, PV_Undpk, PV_Unha, PV_Unlbr, PV_Unpck, PV_Unalz, PV_Unegg, PV_Unlzx, PV_Unrpm, PV_Unt64,
      PV_UnRsc, PV_UnRff, PV_UnPcl, PV_UnLib, PV_UnLib2, PV_UnGx, PV_UnEpf, PV_UnDlt, PV_UnDat, PV_Unxxe, PV_Unuue,
-     PV_Unarc, PV_Unzoo, PV_Unyenc, PV_Unb64;
+     PV_Unarc, PV_Unzoo, PV_Unyenc, PV_Unb64, PV_Unace;
 
 function TUnpacker.Detect(Buff: array of Byte): TUnpackClass;
 
@@ -116,6 +116,9 @@ begin
 
   if (Buff[  0] = ord('P')) and (Buff[  1] = ord('C')) and (Buff[ 2] = ord('K')) and (Buff[ 3] = ord('F')) then Exit(TUnpck);
 
+  if (Buff[  8] = ord('*')) and (Buff[  9] = ord('A')) and (Buff[10] = ord('C')) and (Buff[11] = ord('E')) then Exit(TUnACE);
+
+
   if (Buff[  0] = ord('P')) and (Buff[  1] = ord('A')) then Exit(TUndpk);
 
   if (Buff[  0] = ord('H')) and (Buff[  1] = ord('A')) then Exit(TUnha);
@@ -128,7 +131,7 @@ begin
 
   if (Buff[  0] = ord('L')) and (Buff[  1] = ord('Z')) and (Buff[ 2] = ord('X')) then Exit(TUnLZX);
 
-  if (Buff[  0] = $ED) and (Buff[  1] = $AB) and (Buff[ 2] = $EE) and (Buff[ 2] = $DB) then Exit(TUnRPM);
+  //if (Buff[  0] = $ED) and (Buff[  1] = $AB) and (Buff[ 2] = $EE) and (Buff[ 3] = $DB) then Exit(TUnRPM);
 
   if (Buff[  0] = ord('D')) and (Buff[  1] = ord('H')) and (Buff[ 2] = ord('F')) then Exit(TUnHog);
 
