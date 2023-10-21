@@ -13,7 +13,7 @@ uses
   Classes, SysUtils, ZStream, bzip2stream, ULZMADecoder, LzhHuff, Math, Dialogs;
 
 type
-  TPackMethod = (pmStore, pmDeflate, pmBzip2, pmLh1, pmLzma, pmT64, pmRff, pmUUE, pmXXE, pmYenc, pmOther);
+  TPackMethod = (pmStore, pmDeflate, pmBzip2, pmLh1, pmLzma, pmT64, pmRff, pmUUE, pmXXE, pmB64, pmYenc, pmOther);
 
   TFile = record
     Name: String;
@@ -47,6 +47,56 @@ type
 
 implementation
 
+
+
+procedure DecodeB64(InStr, OutStr: TStream; ALength: Integer);
+const CharsTab: String = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+var Chars: array[0..255] of Byte;
+    List: TStringList;
+    Buf: String;
+    DecLine, Line: String;
+    LineB: array of Byte absolute Line;
+    Val: Cardinal;
+    ValC: array[0..3] of Char absolute Val;
+    Len: Integer;
+    k,j: Integer;
+begin
+  //convert char tab- for speed-up
+  for k:=0 to 255 do Chars[k] := 0;
+  for k:=1 to Length(CharsTab) do
+    Chars[ord(CharsTab[k])] := k-1;
+
+  SetLength(Buf, ALength);
+  InStr.Read(Buf[1], ALength);
+
+  List := TStringList.Create;
+  List.Text := Buf;
+  Buf := '';
+
+
+  DecLine := '';
+  for k:=0 to List.Count-1 do begin
+    if List[k] = '' then continue;
+
+    Line := List[k];
+    Len := Length(Line);
+
+    j := 0;
+    while j < Len do begin
+      Val := (Chars[ LineB[j+0] ] shl 18) +
+             (Chars[ LineB[j+1] ] shl 12) +
+             (Chars[ LineB[j+2] ] shl  6) +
+              Chars[ LineB[j+3] ];
+
+      DecLine := DecLine + ValC[2] + ValC[1] + ValC[0];
+
+      Inc(j,4);
+    end;
+  end;
+  List.Free;
+
+  OutStr.Write(DecLine[1], Length(DecLine));
+end;
 
 procedure DecodeYENC(InStr, OutStr: TStream; ALength: Integer);
 var Ch: Byte;
@@ -243,6 +293,11 @@ begin
     else if FFiles[Index].PackMethod = pmXXE then begin
 
       DecodeXXE(FStream, Str, FFiles[Index].PackedSize);
+
+    end
+    else if FFiles[Index].PackMethod = pmB64 then begin
+
+      DecodeB64(FStream, Str, FFiles[Index].PackedSize);
 
     end
     else if FFiles[Index].PackMethod = pmYENC then begin
