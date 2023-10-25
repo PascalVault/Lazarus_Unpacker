@@ -71,7 +71,7 @@ begin
     FFiles[FCount].Name := FName;
     FFiles[FCount].Offset := A2;
     FFiles[FCount].PackedSize := PackSize;
-    FFiles[FCount].UnpackedSize := Round(PackSize * 3 / 4);
+    FFiles[FCount].UnpackedSize := PackSize;
     FFiles[FCount].PackMethod := pmYENC;
 
     Inc(FCount);
