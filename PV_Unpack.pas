@@ -10,10 +10,10 @@ unit PV_Unpack;
 interface
 
 uses
-  Classes, SysUtils, ZStream, bzip2stream, ULZMADecoder, LzhHuff, Math, Dialogs;
+  Classes, SysUtils, ZStream, bzip2stream, ULZMADecoder, LzhHuff, DLTUnpack, Math, Dialogs;
 
 type
-  TPackMethod = (pmStore, pmDeflate, pmBzip2, pmLh1, pmLzma, pmT64, pmRff, pmUUE, pmXXE, pmB64, pmYenc, pmOther);
+  TPackMethod = (pmStore, pmDeflate, pmBzip2, pmLh1, pmLzma, pmT64, pmRff, pmUUE, pmXXE, pmB64, pmYenc, pmDLT, pmOther);
 
   TFile = record
     Name: String;
@@ -303,6 +303,11 @@ begin
     else if FFiles[Index].PackMethod = pmYENC then begin
 
       DecodeYENC(FStream, Str, FFiles[Index].PackedSize);
+
+    end
+    else if FFiles[Index].PackMethod = pmDLT then begin
+
+      Unpack_DLT(FStream, Str);
 
     end
     else if FFiles[Index].PackMethod = pmT64 then begin
