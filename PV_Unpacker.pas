@@ -31,6 +31,8 @@ type
     function Count: Integer;
     function GetName(Index: Integer): String;
     function GetSize(Index: Integer): Int64;
+    function GetDate(Index: Integer): TDateTime;
+    function GetCRC(Index: Integer): Cardinal;
     function GetPackedSize(Index: Integer): Int64;
     function CanUnpack(Index: Integer): Boolean;
     function Extract(Index: Integer; Str: TStream): Boolean; overload;
@@ -40,14 +42,12 @@ type
     destructor Destroy;
   end;
 
-
-
 implementation
 
 uses PV_Unzip, PV_Untar, PV_Unrar, PV_Unrar5, PV_Unlzh, PV_Unpak, PV_Ungzip, PV_Unbh, PV_Unwad, PV_Unwad2,
      PV_Unbzip2, PV_Unbza, PV_Unlod, PV_Unarj, PV_Unftg, PV_Undrs, PV_Unlzma, PV_Unbin, PV_Ungrp, PV_Ungw3, PV_Unhog,
-     PV_Unbig, PV_Uncpio, PV_Undpk, PV_Unha, PV_Unlbr, PV_Unpck, PV_Unalz, PV_Unegg, PV_Unlzx, PV_Unrpm, PV_Unt64,
-     PV_UnRsc, PV_UnRff, PV_UnPcl, PV_UnLib, PV_UnLib2, PV_UnGx, PV_UnEpf, PV_UnDlt, PV_UnDat, PV_Unxxe, PV_Unuue,
+     PV_Unbig, PV_Uncpio, PV_Undpk, PV_Unha, PV_Unlbr, PV_Unpck, PV_Unalz, PV_Unegg, PV_Unlzx, {PV_Unrpm,} PV_Unt64,
+     {PV_UnRsc,} PV_UnRff, PV_UnPcl, PV_UnLib, PV_UnLib2, PV_UnGx, PV_UnEpf, PV_UnDlt, PV_UnDat, PV_Unxxe, PV_Unuue,
      PV_Unarc, PV_Unzoo, PV_Unyenc, PV_Unb64, PV_Unace;
 
 function TUnpacker.Detect(Buff: array of Byte): TUnpackClass;
@@ -156,7 +156,7 @@ begin
   if (Buff[  0] = ord('=')) and (Buff[  1] = ord('y')) and (Buff[  2] = ord('b')) and (Buff[  3] = ord('e')) then Exit(TUnYenc);
 
 
-  if (Buff[  0] = ord('P')) and (Buff[  1] = ord('R')) and (Buff[  2] = ord('O')) and (Buff[  3] = ord('L')) then Exit(TUnRsc);
+  //if (Buff[  0] = ord('P')) and (Buff[  1] = ord('R')) and (Buff[  2] = ord('O')) and (Buff[  3] = ord('L')) then Exit(TUnRsc);
 
   if (Buff[  0] = ord('p')) and (Buff[  1] = ord('c')) and (Buff[  2] = ord('x')) and (Buff[  3] = ord('L')) then Exit(TUnPcl);
 
@@ -218,6 +218,20 @@ begin
   if FObj = nil then Exit(-1);
 
   Result := FObj.GetSize(Index);
+end;
+
+function TUnpacker.GetDate(Index: Integer): TDateTime;
+begin
+  if FObj = nil then Exit(-1);
+
+  Result := FObj.GetDateTime(Index);
+end;
+
+function TUnpacker.GetCRC(Index: Integer): Cardinal;
+begin
+  if FObj = nil then Exit(-1);
+
+  Result := FObj.GetCRC(Index);
 end;
 
 function TUnpacker.GetPackedSize(Index: Integer): Int64;

@@ -10,15 +10,19 @@ unit PV_Unpack;
 interface
 
 uses
-  Classes, SysUtils, ZStream, bzip2stream, ULZMADecoder, LzhHuff, DLTUnpack, Math, Dialogs;
+  Classes, SysUtils, DateUtils, Math,
+  ZStream, bzip2stream, ULZMADecoder, LzhHuff, LHA4, DLTUnpack, TxtEncodings, Dialogs;
 
 type
-  TPackMethod = (pmStore, pmDeflate, pmBzip2, pmLh1, pmLzma, pmT64, pmRff, pmUUE, pmXXE, pmB64, pmYenc, pmDLT, pmOther);
+  TPackMethod = (pmStore, pmDeflate, pmBzip2, pmLh1, pmLh4, pmLh5, pmLh6, pmLh7, pmLhX,
+  pmLzma, pmT64, pmRff, pmUUE, pmXXE, pmB64, pmYenc, pmDLT, pmOther);
 
   TFile = record
     Name: String;
     PackedSize: Cardinal;
     UnpackedSize: Cardinal;
+    ModDate: TDateTime;
+    CRC32: Cardinal;
     Offset: Cardinal;
     PackMethod: TPackMethod;
     Extra: Cardinal;
@@ -27,201 +31,76 @@ type
   { TUnpack }
 
   TUnpack = class
+  private
   public
     FFiles: array of TFile;
     FStream: TStream;
     FCount: Integer;
     FSize: Integer;
+    procedure AddFile(AFile: TFile);
   public
     property Count: Integer read FCount;
     function GetName(Index: Integer): String;
     function GetSize(Index: Integer): Int64;
+    function GetCRC(Index: Integer): Cardinal;
     function GetPackedSize(Index: Integer): Int64;
+    function GetDateTime(Index: Integer): TDateTime;
     function CanUnpack(Index: Integer): Boolean;
     function Extract(Index: Integer; Str: TStream): Boolean;
-    constructor Create(Str: TStream); virtual; abstract;
+    constructor Create(Str: TStream); virtual;
     destructor Destroy;
   end;
 
   function ReadStrNull(Str: TStream): String;
+  function Dos2DateTime(Time, Date: Word): TDateTime;
+  function Unix2DateTime(DateTime: Cardinal): TDateTime;
+  function Win2DateTime(DateTime: Int64): TDateTime;
+  function Unk2DateTime(DateTime: Cardinal): TDateTime;
+  function Amiga2DateTime(DateTime: Cardinal): TDateTime;
 
 implementation
 
-
-
-procedure DecodeB64(InStr, OutStr: TStream; ALength: Integer);
-const CharsTab: String = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-var Chars: array[0..255] of Byte;
-    List: TStringList;
-    Buf: String;
-    DecLine, Line: String;
-    LineB: array of Byte absolute Line;
-    Val: Cardinal;
-    ValC: array[0..3] of Char absolute Val;
-    Len: Integer;
-    k,j: Integer;
+function Unix2DateTime(DateTime: Cardinal): TDateTime;
 begin
-  //convert char tab- for speed-up
-  for k:=0 to 255 do Chars[k] := 0;
-  for k:=1 to Length(CharsTab) do
-    Chars[ord(CharsTab[k])] := k-1;
-
-  SetLength(Buf, ALength);
-  InStr.Read(Buf[1], ALength);
-
-  List := TStringList.Create;
-  List.Text := Buf;
-  Buf := '';
-
-
-  DecLine := '';
-  for k:=0 to List.Count-1 do begin
-    if List[k] = '' then continue;
-
-    Line := List[k];
-    Len := Length(Line);
-
-    j := 0;
-    while j < Len do begin
-      Val := (Chars[ LineB[j+0] ] shl 18) +
-             (Chars[ LineB[j+1] ] shl 12) +
-             (Chars[ LineB[j+2] ] shl  6) +
-              Chars[ LineB[j+3] ];
-
-      DecLine := DecLine + ValC[2] + ValC[1] + ValC[0];
-
-      Inc(j,4);
-    end;
-  end;
-  List.Free;
-
-  OutStr.Write(DecLine[1], Length(DecLine));
+  Result := UnixToDateTime(DateTime);
 end;
 
-procedure DecodeYENC(InStr, OutStr: TStream; ALength: Integer);
-var Ch: Byte;
-    Buf: String;
-    DecLine: String;
-    i: Integer;
+function Win2DateTime(DateTime: Int64): TDateTime;
+const OA_ZERO_TICKS = UInt64(94353120000000000);
+      TICKS_PER_DAY = UInt64(864000000000);
 begin
-  SetLength(Buf, ALength);
-  InStr.Read(Buf[1], ALength);
-
-  DecLine := '';
-
-  i := 1;
-  while i <= ALength do begin
-    Ch := ord(Buf[i]);
-
-    if Ch = ord('=') then begin
-      DecLine := DecLine + chr(ord(Buf[i+1])-106);
-      Inc(i);
-    end
-    else if (Ch <> 13) and (Ch <> 10) then DecLine := DecLine + chr(Ch - 42);
-
-    Inc(i);
-  end;
-
-  OutStr.Write(DecLine[1], Length(DecLine));
+  //100-nanosecond intervals since January 1, 1601
+  Result := (Real(DateTime) - OA_ZERO_TICKS) / TICKS_PER_DAY;
 end;
 
-procedure DecodeXXE(InStr, OutStr: TStream; ALength: Integer);
-const CharsTab: String = '+-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-var Chars: array[0..255] of Byte;
-    List: TStringList;
-    Buf: String;
-    DecLine, Line: String;
-    LineB: array of Byte absolute Line;
-    Val: Cardinal;
-    ValC: array[0..3] of Char absolute Val;
-    Len: Integer;
-    k,j: Integer;
+function Unk2DateTime(DateTime: Cardinal): TDateTime;
 begin
-  //convert char tab- for speed-up
-  for k:=0 to 255 do Chars[k] := 0;
-  for k:=1 to Length(CharsTab) do
-    Chars[ord(CharsTab[k])] := k-1;
-
-  SetLength(Buf, ALength);
-  InStr.Read(Buf[1], ALength);
-
-  List := TStringList.Create;
-  List.Text := Buf;
-  Buf := '';
-
-
-  DecLine := '';
-  for k:=0 to List.Count-1 do begin
-    if List[k] = '' then continue;
-    if List[k] = '+' then break;
-
-    Line := List[k];
-    Len := Chars[LineB[0]];
-
-    j := 1;
-    while j<Ceil(4*Len/3) do begin
-      Val := (Chars[ LineB[j+0] ] shl 18) +
-             (Chars[ LineB[j+1] ] shl 12) +
-             (Chars[ LineB[j+2] ] shl  6) +
-              Chars[ LineB[j+3] ];
-
-      DecLine := DecLine + ValC[2] + ValC[1] + ValC[0];
-
-      Inc(j,4);
-    end;
-  end;
-  List.Free;
-
-  OutStr.Write(DecLine[1], Length(DecLine));
+  Result := DosDateTimeToDateTime(DateTime); //??
 end;
 
-procedure DecodeUUE(InStr, OutStr: TStream; ALength: Integer);
-const CharsTab: String = ' !"#$%&''()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_';
-var Chars: array[0..255] of Byte;
-    List: TStringList;
-    Buf: String;
-    DecLine, Line: String;
-    LineB: array of Byte absolute Line;
-    Val: Cardinal;
-    ValC: array[0..3] of Char absolute Val;
-    Len: Integer;
-    k,j: Integer;
+function Amiga2DateTime(DateTime: Cardinal): TDateTime;
+//not sure if that's "amiga" but used in LZX amiga format
+var D,M,Y,HH,MM,SS: Integer;
 begin
-  //convert char tab- for speed-up
-  for k:=0 to 255 do Chars[k] := 0;
-  for k:=1 to Length(CharsTab) do
-    Chars[ord(CharsTab[k])] := k-1;
+  DateTime := SwapEndian(DateTime);
 
-  SetLength(Buf, ALength);
-  InStr.Read(Buf[1], ALength);
+  Y  := (DateTime shr 17) and $3F;
+  M  := (DateTime shr 23) and $0F;
+  D  := (DateTime shr 27) and $1F;
+  Y  := Y + 1970;
+  M  := M + 1;
 
-  List := TStringList.Create;
-  List.Text := Buf;
-  Buf := '';
+  HH := (DateTime shr 12) and $1F;
+  MM := (DateTime shr  6) and $3F;
+  SS := (DateTime       ) and $3F;
 
-  DecLine := '';
-  for k:=0 to List.Count-1 do begin
-    if List[k] = '' then continue;
-    if List[k] = '`' then break;
+  Result := EncodeDateTime(Y,M,D,HH,MM,SS,0);
+end;
 
-    Line := List[k];
-    Len := Chars[LineB[0]];
-
-    j := 1;
-    while j<Ceil(4*Len/3) do begin
-      Val := (Chars[ LineB[j+0] ] shl 18) +
-             (Chars[ LineB[j+1] ] shl 12) +
-             (Chars[ LineB[j+2] ] shl  6) +
-              Chars[ LineB[j+3] ];
-
-      DecLine := DecLine + ValC[2] + ValC[1] + ValC[0];
-
-      Inc(j,4);
-    end;
-  end;
-  List.Free;
-
-  OutStr.Write(DecLine[1], Length(DecLine));
+function Dos2DateTime(Time, Date: Word): TDateTime;
+begin
+  if (Date = 0) or (Time = 0) then Exit(0);
+  Result := DosDateTimeToDateTime((Date shl 16) + Time);
 end;
 
 function ReadStrNull(Str: TStream): String;
@@ -236,6 +115,16 @@ begin
 end;
 
 
+procedure TUnpack.AddFile(AFile: TFile);
+begin
+  FFiles[FCount] := AFile;
+  Inc(FCount);
+
+  if FCount = FSize then begin
+    Inc(FSize, 1000);
+    SetLength(FFiles, FSize);
+  end;
+end;
 
 function TUnpack.GetName(Index: Integer): String;
 begin
@@ -247,9 +136,19 @@ begin
   Result := FFiles[Index].UnpackedSize;
 end;
 
+function TUnpack.GetCRC(Index: Integer): Cardinal;
+begin
+  Result := FFiles[Index].CRC32;
+end;
+
 function TUnpack.GetPackedSize(Index: Integer): Int64;
 begin
   Result := FFiles[Index].PackedSize;
+end;
+
+function TUnpack.GetDateTime(Index: Integer): TDateTime;
+begin
+  Result := FFiles[Index].ModDate;
 end;
 
 function TUnpack.CanUnpack(Index: Integer): Boolean;
@@ -266,7 +165,8 @@ var Dec: TDecompressionStream;
     Prop: array[0..4] of Byte;
     Temp: Word;
     i: Integer;
-    Lzh: TLZH;
+    Lzh1: TLZH;
+    Lzh4: TLHA_Base;
 begin
   try
     Result := True;
@@ -280,9 +180,23 @@ begin
     end
     else if FFiles[Index].PackMethod = pmLh1 then begin
 
-      Lzh := TLZH.Create(FStream, Str);
-      Lzh.Decode(FFiles[Index].UnpackedSize);
-      Lzh.Free;
+      Lzh1 := TLZH.Create(FStream, Str);
+      Lzh1.Decode(FFiles[Index].UnpackedSize);
+      Lzh1.Free;
+
+    end
+    else if FFiles[Index].PackMethod in [pmLh4, pmLh5, pmLh6, pmLh7, pmLhX] then begin
+
+      case FFiles[Index].PackMethod of
+        pmLh4 : Lzh4 := TLha4.Create(FStream, Str);
+        pmLh5 : Lzh4 := TLha5.Create(FStream, Str);
+        pmLh6 : Lzh4 := TLha6.Create(FStream, Str);
+        pmLh7 : Lzh4 := TLha7.Create(FStream, Str);
+        pmLhX : Lzh4 := TLhaX.Create(FStream, Str);
+      end;
+
+      Lzh4.Decode(FFiles[Index].UnpackedSize);
+      Lzh4.Free;
 
     end
     else if FFiles[Index].PackMethod = pmUUE then begin
@@ -338,7 +252,7 @@ begin
        Dec2.Free;
     end
     else if FFiles[Index].PackMethod = pmStore then begin
-      Str.CopyFrom(FStream, FFiles[Index].UnpackedSize);
+      Str.CopyFrom(FStream, FFiles[Index].UnPackedSize);
     end
     else if FFiles[Index].PackMethod = pmLzma then begin
       //ExtractStreamLzma(FStream, Str);
@@ -352,6 +266,13 @@ begin
   except
     Result := False;
   end;
+end;
+
+constructor TUnpack.Create(Str: TStream);
+begin
+  FSize  := 1000;
+  FCount := 0;
+  SetLength(FFiles, FSize);
 end;
 
 destructor TUnpack.Destroy;
