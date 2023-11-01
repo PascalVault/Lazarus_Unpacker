@@ -4,12 +4,15 @@ PV_Unpacker - simple pure Pascal library to unpack various archives (ZIP, RAR, L
 See also:
 https://github.com/PascalVault/Lazarus_Packer
 
-## Supported formats (45+) ##
+## Supported formats (46+) ##
 - .ZIP, .JAR, .CBZ, .DOCX (store, deflate, lzma, bzip2)
 - .RAR, .CBR (version 4 and 5; store)
 - .TAR, .CBT
-- .ARJ
-- BlackHole .BH
+- .ARJ (store, methods: 1-3)
+- .LZH, .LHA (store, lh1, lh4, lh5, lh6, lh7, lhx)
+- .ZOO (store, lzh)
+- .AR (store, lh4, lh5)
+- BlackHole .BH (store, deflate)
 - .BIG
 - BGA .BZA/.GZA
 - .CPIO
@@ -20,9 +23,6 @@ https://github.com/PascalVault/Lazarus_Packer
 - .BZIP2, .BZ2
 - .HA
 - .LBR
-- .LZH, .LHA (store, lh1, lh4, lh5, lh6, lh7, lhx)
-- .ZOO (store, lzh)
-- .AR (store, lh4, lh5)
 - .LZ, .LZMA
 - .PCK
 - Homm3 .LOD
@@ -32,9 +32,13 @@ https://github.com/PascalVault/Lazarus_Packer
 and more!
 
 ## Unsupported ###
-- encrypted archives
+- encrypted ZIP, RAR archives
 - RAR files that use method different than "store"
-- ARJ that use method different than "store"
+- ARJ files that use method "fastest"
+
+## Comming soon ##
+- progress bar
+- integrity verification
 
 ## Usage ###
     use PV_Unpacker;
