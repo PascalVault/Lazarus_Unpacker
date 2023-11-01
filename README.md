@@ -9,7 +9,7 @@ https://github.com/PascalVault/Lazarus_Packer
 - .RAR, .CBR (version 4 and 5; store)
 - .TAR, .CBT
 - .ARJ
-- BlacHole .BH
+- BlackHole .BH
 - .BIG
 - BGA .BZA/.GZA
 - .CPIO
@@ -21,6 +21,8 @@ https://github.com/PascalVault/Lazarus_Packer
 - .HA
 - .LBR
 - .LZH, .LHA (store, lh1, lh4, lh5, lh6, lh7, lhx)
+- .ZOO (store, lzh)
+- .AR (store, lh4, lh5)
 - .LZ, .LZMA
 - .PCK
 - Homm3 .LOD
