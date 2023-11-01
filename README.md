@@ -4,7 +4,7 @@ PV_Unpacker - simple pure Pascal library to unpack various archives (ZIP, RAR, L
 See also:
 https://github.com/PascalVault/Lazarus_Packer
 
-## Supported formats ##
+## Supported formats (45+) ##
 - .ZIP, .JAR, .CBZ, .DOCX (store, deflate, lzma, bzip2)
 - .RAR, .CBR (version 4 and 5; store)
 - .TAR, .CBT
@@ -20,7 +20,7 @@ https://github.com/PascalVault/Lazarus_Packer
 - .BZIP2, .BZ2
 - .HA
 - .LBR
-- .LZH, .LHA
+- .LZH, .LHA (store, lh1, lh4, lh5, lh6, lh7, lhx)
 - .LZ, .LZMA
 - .PCK
 - Homm3 .LOD
@@ -33,7 +33,6 @@ and more!
 - encrypted archives
 - RAR files that use method different than "store"
 - ARJ that use method different than "store"
-- LZH that use method different than "store" and "lh1"
 
 ## Usage ###
     use PV_Unpacker;
@@ -45,8 +44,8 @@ and more!
       if Unp.GetFormat = '' then ShowMessage('Unsupported');
     
       for i:=0 to Unp.Count-1 do begin
-        Memo1.Lines.Add( Unp.GetName(i) );
-        if Unp.CanUnpack(i) then Unp.Extract(i, Unp.GetName(i) );
+        Memo1.Lines.Add('name ' + Unp.GetName(i) + ', crc ' + IntToHex( Unp.GetCRC(i)) + ', date ' +  DateToStr(Unp.GetDate(i)) + ', packed size ' + IntToStr(Unp.GetPackedSize(i)) );
+        if Unp.CanUnpack(i) then Unp.Extract(i, Unp.GetName(i) );        
       end;
       Unp.Free;
     end;  
