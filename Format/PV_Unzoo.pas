@@ -86,8 +86,9 @@ begin
       AFile.ModDate := Dos2DateTime(Entry.Time, Entry.Date);
       AFile.CRC32 := Entry.CRC16;
 
-      if Entry.Compression = 0 then AFile.PackMethod := pmStore
-      else                          AFile.PackMethod := pmOther;
+      if Entry.Compression = 0      then AFile.PackMethod := pmStore
+      else if Entry.Compression = 2 then AFile.PackMethod := pmLH5
+      else                               AFile.PackMethod := pmOther;
 
       AddFile(AFile);
 
