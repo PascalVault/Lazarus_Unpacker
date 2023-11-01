@@ -5,7 +5,7 @@ unit PV_Unarj;
 //PV Unpack
 //https://github.com/PascalVault
 //Licence: MIT
-//Last update: 2023-09-18
+//Last update: 2023-11-01
 //ARJ .ARJ
 
 interface
@@ -139,9 +139,9 @@ begin
       AFile.PackedSize := Entry.PackedSize;
       AFile.UnpackedSize := Entry.UnpackedSize;
 
-      if Entry.Compression = 0 then AFile.PackMethod := pmStore
-      else                          AFile.PackMethod := pmOther;
-      //AFile.PackMethod := pmStore ;
+      if Entry.Compression = 0             then AFile.PackMethod := pmStore
+      else if Entry.Compression in [1,2,3] then AFile.PackMethod := pmLH6
+      else                                      AFile.PackMethod := pmOther;
 
       AFile.ModDate := Dos2DateTime(Entry.Time, Entry.Date);
       AFile.CRC32 := Entry.CRC32;
