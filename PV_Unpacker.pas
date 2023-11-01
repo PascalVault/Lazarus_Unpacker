@@ -5,7 +5,7 @@ unit PV_Unpacker;
 //PV Unpack
 //https://github.com/PascalVault
 //Licence: MIT
-//Last update: 2023-09-16
+//Last update: 2023-11-01
 
 interface
 
@@ -48,7 +48,7 @@ uses PV_Unzip, PV_Untar, PV_Unrar, PV_Unrar5, PV_Unlzh, PV_Unpak, PV_Ungzip, PV_
      PV_Unbzip2, PV_Unbza, PV_Unlod, PV_Unarj, PV_Unftg, PV_Undrs, PV_Unlzma, PV_Unbin, PV_Ungrp, PV_Ungw3, PV_Unhog,
      PV_Unbig, PV_Uncpio, PV_Undpk, PV_Unha, PV_Unlbr, PV_Unpck, PV_Unalz, PV_Unegg, PV_Unlzx, {PV_Unrpm,} PV_Unt64,
      {PV_UnRsc,} PV_UnRff, PV_UnPcl, PV_UnLib, PV_UnLib2, PV_UnGx, PV_UnEpf, PV_UnDlt, PV_UnDat, PV_Unxxe, PV_Unuue,
-     PV_Unarc, PV_Unzoo, PV_Unyenc, PV_Unb64, PV_Unace;
+     PV_Unarc, PV_Unzoo, PV_Unyenc, PV_Unb64, PV_Unace, PV_Unar;
 
 function TUnpacker.Detect(Buff: array of Byte): TUnpackClass;
 
@@ -118,6 +118,7 @@ begin
 
   if (Buff[  8] = ord('*')) and (Buff[  9] = ord('A')) and (Buff[10] = ord('C')) and (Buff[11] = ord('E')) then Exit(TUnACE);
 
+  if (Buff[  2] = ord('-')) and (Buff[  3] = ord('l')) and (Buff[ 4] = ord('h')) and (Buff[6] = ord('-')) then Exit(TUnAR);
 
   if (Buff[  0] = ord('P')) and (Buff[  1] = ord('A')) then Exit(TUndpk);
 
