@@ -10,12 +10,14 @@ unit PV_Unpack;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, Math,
+  Classes, SysUtils, DateUtils, Math, HasherBase,
   ZStream, bzip2stream, ULZMADecoder, LzhHuff, LHA4, DLTUnpack, TxtEncodings, Dialogs;
 
 type
   TPackMethod = (pmStore, pmDeflate, pmBzip2, pmLh1, pmLh4, pmLh5, pmLh6, pmLh7, pmLhX,
   pmLzma, pmT64, pmRff, pmUUE, pmXXE, pmB64, pmYenc, pmDLT, pmOther);
+
+  TOpResult = (orFail, orOK, orVerified);
 
   TFile = record
     Name: String;
@@ -33,11 +35,13 @@ type
   TUnpack = class
   private
   public
+    FHasherClass: THasherClass;
     FFiles: array of TFile;
     FStream: TStream;
     FCount: Integer;
     FSize: Integer;
     procedure AddFile(AFile: TFile);
+    procedure Progress(Position, Size: Int64);
   public
     property Count: Integer read FCount;
     function GetName(Index: Integer): String;
@@ -46,9 +50,22 @@ type
     function GetPackedSize(Index: Integer): Int64;
     function GetDateTime(Index: Integer): TDateTime;
     function CanUnpack(Index: Integer): Boolean;
-    function Extract(Index: Integer; Str: TStream): Boolean;
+    function Extract(Index: Integer; Str: TStream): TOpResult;
     constructor Create(Str: TStream); virtual;
     destructor Destroy;
+  end;
+
+  { TProgressStream }
+
+  TProgressStream = class(TStream)
+  private
+    FStream: TStream;
+    FTotalSize: Int64;
+    FHasher: THasherBase;
+    FTotalWritten: Int64;
+  public
+    constructor Create(Str: TStream; TotalSize: Int64; Hasher: THasherBase);
+    function Write(const Buffer; Count: Longint): Longint; override;
   end;
 
   function ReadStrNull(Str: TStream): String;
@@ -114,6 +131,28 @@ begin
   Str.Position := Str.Position - TempLen + Poss;
 end;
 
+{ TProgressStream }
+
+constructor TProgressStream.Create(Str: TStream; TotalSize: Int64;
+  Hasher: THasherBase);
+begin
+  inherited Create;
+  FStream := Str;
+  FHasher := Hasher;
+  FTotalSize := TotalSize;
+  FTotalWritten := 0;
+end;
+
+function TProgressStream.Write(const Buffer; Count: Longint): Longint;
+begin
+  Result := FStream.Write(Buffer, Count);
+
+  if FHasher <> nil then
+  FHasher.Update(@Buffer, Count);
+
+  Inc(FTotalWritten, Count);
+end;
+
 
 procedure TUnpack.AddFile(AFile: TFile);
 begin
@@ -124,6 +163,11 @@ begin
     Inc(FSize, 1000);
     SetLength(FFiles, FSize);
   end;
+end;
+
+procedure TUnpack.Progress(Position, Size: Int64);
+begin
+  //
 end;
 
 function TUnpack.GetName(Index: Integer): String;
@@ -156,7 +200,7 @@ begin
   Result := FFiles[Index].PackMethod <> pmOther;
 end;
 
-function TUnpack.Extract(Index: Integer; Str: TStream): Boolean;
+function TUnpack.Extract(Index: Integer; Str: TStream): TOpResult;
 var Dec: TDecompressionStream;
     Dec2: TDecompressBzip2Stream;
     ReadLen: Integer;
@@ -167,20 +211,31 @@ var Dec: TDecompressionStream;
     i: Integer;
     Lzh1: TLZH;
     Lzh4: TLHA_Base;
+    Hasher: THasherBase;
+    ArchiveCRC, CalcCRC: String;
+    ProgStr: TProgressStream;
 begin
   try
-    Result := True;
+    Result := orOK;
+
+    Hasher := nil;
+    if FHasherClass <> nil then
+    Hasher := FHasherClass.Create;
+
+    ProgStr := TProgressStream.Create(Str, FFiles[Index].UnpackedSize, Hasher);
 
     FStream.Position := FFiles[Index].Offset;
 
     if FFiles[Index].PackMethod = pmDeflate then begin
       Dec := TDecompressionStream.Create(FStream, True);
-      ReadLen := Str.CopyFrom(Dec, FFiles[Index].UnpackedSize);
+
+      ProgStr.CopyFrom(Dec, FFiles[Index].UnpackedSize);
+
       Dec.Free;
     end
     else if FFiles[Index].PackMethod = pmLh1 then begin
 
-      Lzh1 := TLZH.Create(FStream, Str);
+      Lzh1 := TLZH.Create(FStream, ProgStr);
       Lzh1.Decode(FFiles[Index].UnpackedSize);
       Lzh1.Free;
 
@@ -188,11 +243,11 @@ begin
     else if FFiles[Index].PackMethod in [pmLh4, pmLh5, pmLh6, pmLh7, pmLhX] then begin
 
       case FFiles[Index].PackMethod of
-        pmLh4 : Lzh4 := TLha4.Create(FStream, Str);
-        pmLh5 : Lzh4 := TLha5.Create(FStream, Str);
-        pmLh6 : Lzh4 := TLha6.Create(FStream, Str);
-        pmLh7 : Lzh4 := TLha7.Create(FStream, Str);
-        pmLhX : Lzh4 := TLhaX.Create(FStream, Str);
+        pmLh4 : Lzh4 := TLha4.Create(FStream, ProgStr);
+        pmLh5 : Lzh4 := TLha5.Create(FStream, ProgStr);
+        pmLh6 : Lzh4 := TLha6.Create(FStream, ProgStr);
+        pmLh7 : Lzh4 := TLha7.Create(FStream, ProgStr);
+        pmLhX : Lzh4 := TLhaX.Create(FStream, ProgStr);
       end;
 
       Lzh4.Decode(FFiles[Index].UnpackedSize);
@@ -245,14 +300,16 @@ begin
        SetLength(Buf, 4096);
        repeat
          ReadLen := Dec2.Read(Buf[0], 4096);
-         Str.Write(Buf[0], ReadLen);
+         ProgStr.Write(Buf[0], ReadLen);
+
          if ReadLen < 4096 then break;
        until 1=0;
 
        Dec2.Free;
     end
     else if FFiles[Index].PackMethod = pmStore then begin
-      Str.CopyFrom(FStream, FFiles[Index].UnPackedSize);
+
+      ProgStr.CopyFrom(FStream, FFiles[Index].UnPackedSize);
     end
     else if FFiles[Index].PackMethod = pmLzma then begin
       //ExtractStreamLzma(FStream, Str);
@@ -261,10 +318,22 @@ begin
 
       Lzma := TLZMADecoder.Create;
       Lzma.SetDecoderProperties(Prop);
+
       Lzma.Code(FStream, Str, FFiles[Index].UnpackedSize);
+
+      Lzma.Free;
+    end;
+
+    ProgStr.Free;
+    if FHasherClass <> nil then begin
+      CalcCRC    := Hasher.Final;
+      ArchiveCRC := IntToHex(FFiles[Index].CRC32, Length(CalcCRC));
+      Hasher.Free;
+
+      if ArchiveCRC = CalcCRC then Result := orVerified;
     end;
   except
-    Result := False;
+    Result := orFail;
   end;
 end;
 
@@ -273,6 +342,7 @@ begin
   FSize  := 1000;
   FCount := 0;
   SetLength(FFiles, FSize);
+  FHasherClass := nil;
 end;
 
 destructor TUnpack.Destroy;

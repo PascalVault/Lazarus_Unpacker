@@ -35,8 +35,8 @@ type
     function GetCRC(Index: Integer): Cardinal;
     function GetPackedSize(Index: Integer): Int64;
     function CanUnpack(Index: Integer): Boolean;
-    function Extract(Index: Integer; Str: TStream): Boolean; overload;
-    function Extract(Index: Integer; Filename: String): Boolean; overload;
+    function Extract(Index: Integer; Str: TStream): TOpResult; overload;
+    function Extract(Index: Integer; Filename: String): TOpResult; overload;
     constructor Create(Str: TStream); overload;
     constructor Create(Filename: String); overload;
     destructor Destroy;
@@ -249,17 +249,17 @@ begin
   Result := FObj.CanUnpack(Index);
 end;
 
-function TUnpacker.Extract(Index: Integer; Str: TStream): Boolean;
+function TUnpacker.Extract(Index: Integer; Str: TStream): TOpResult;
 begin
-  if FObj = nil then Exit(False);
+  if FObj = nil then Exit(orFail);
 
   Result := FObj.Extract(Index, Str);
 end;
 
-function TUnpacker.Extract(Index: Integer; Filename: String): Boolean;
+function TUnpacker.Extract(Index: Integer; Filename: String): TOpResult;
 var F: TFileStream;
 begin
-  Result := False;
+  Result := orFail;
   if FObj = nil then Exit;
 
   try
