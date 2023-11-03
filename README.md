@@ -4,6 +4,9 @@ PV_Unpacker - simple pure Pascal library to unpack various archives (ZIP, RAR, L
 See also:
 https://github.com/PascalVault/Lazarus_Packer
 
+## Demo application ##
+![image info](./demo.png)
+
 ## Supported formats (46+) ##
 - .ZIP, .JAR, .CBZ, .DOCX (store, deflate, lzma, bzip2)
 - .RAR, .CBR (version 4 and 5; store)
