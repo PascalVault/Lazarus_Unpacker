@@ -11,7 +11,7 @@ unit PV_Unarj;
 interface
 
 uses
-  Classes, SysUtils, PV_Unpack, Dialogs;
+  Classes, SysUtils, PV_Unpack, CRC32_ISOHDLC, Dialogs;
 
   { TUntar }
 
@@ -97,6 +97,7 @@ begin
   inherited Create(Str);
 
   FStream := Str;
+  FHasherClass := THasherCRC32_ISOHDLC;
 
   SetLength(Temp, 50000);
 

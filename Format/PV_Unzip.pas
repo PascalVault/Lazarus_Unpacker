@@ -11,7 +11,7 @@ unit PV_Unzip;
 interface
 
 uses
-  Classes, SysUtils, PV_Unpack, Dialogs;
+  Classes, SysUtils, PV_Unpack, CRC32_ISOHDLC, Dialogs;
 
 type
   { TUnzip }
@@ -51,6 +51,7 @@ begin
   inherited Create(Str);
 
   FStream := Str;
+  FHasherClass := THasherCRC32_ISOHDLC;
 
   try
 

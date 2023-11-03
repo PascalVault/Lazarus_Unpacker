@@ -78,6 +78,8 @@ begin
       FStream.Read(Entry, SizeOf(Entry));
       FStream.Read(Magic[0], 4);
 
+      //showmessage(magic);
+
       if Magic = 'PGBP' then Offset := FStream.Position
       else                   Offset := FStream.Position-4;
 

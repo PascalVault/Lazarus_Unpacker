@@ -5,13 +5,13 @@ unit PV_Unha;
 //PV Unpack
 //https://github.com/PascalVault
 //Licence: MIT
-//Last update: 2023-09-18
+//Last update: 2023-11-03
 //HA by Harri Hirvola
 
 interface
 
 uses
-  Classes, SysUtils, PV_Unpack, Dialogs;
+  Classes, SysUtils, PV_Unpack, CRC32_ISOHDLC, Dialogs;
 
   { TUnPak }
 
@@ -48,14 +48,15 @@ var Head: THead;
     i: Integer;
     Path, FName: String;
     ExtraLen: Byte;
+    Method: Byte;
     AFile: TFile;
 begin
   inherited Create(Str);
 
   FStream := Str;
+  FHasherClass := THasherCRC32_ISOHDLC;
 
   try
-
     FStream.Read(Head, SizeOf(Head));
 
     for i:=0 to Head.TableCount-1 do begin
@@ -67,13 +68,17 @@ begin
 
       if ExtraLen > 0 then FStream.Position := FStream.Position + ExtraLen;
 
+      Method := Entry.TypeVer and $F;
+
       AFile.Name := FName;
       AFile.Offset := FStream.Position;
       AFile.PackedSize := Entry.PackedSize;
       AFile.UnpackedSize := Entry.UnpackedSize;
-      AFile.PackMethod := pmStore;
       AFile.ModDate := Unix2DateTime(Entry.DateTime);
       AFile.CRC32 := Entry.CRC32;
+
+      if Method = 0 then AFile.PackMethod := pmStore
+      else               AFile.PackMethod := pmOther;
 
       AddFile(AFile);
 

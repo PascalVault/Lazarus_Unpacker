@@ -11,7 +11,7 @@ unit PV_Unlbr;
 interface
 
 uses
-  Classes, SysUtils, PV_Unpack, Dialogs;
+  Classes, SysUtils, PV_Unpack, CRC16_XMODEM, Dialogs;
 
   { TUnPak }
 
@@ -48,6 +48,7 @@ begin
   inherited Create(Str);
 
   FStream := Str;
+  FHasherClass := THasherCRC16_XMODEM;
 
   try
     while True do begin

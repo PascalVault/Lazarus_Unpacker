@@ -11,7 +11,7 @@ unit PV_Unbh;
 interface
 
 uses
-  Classes, SysUtils, PV_Unpack, Dialogs;
+  Classes, SysUtils, PV_Unpack, CRC32_ISOHDLC, Dialogs;
 
 type
   { TUnbh }
@@ -54,9 +54,9 @@ begin
   inherited Create(Str);
 
   FStream := Str;
+  FHasherClass := THasherCRC32_ISOHDLC;
 
   try
-
     while True do begin
       FStream.Read(Head, SizeOf(Head));
 

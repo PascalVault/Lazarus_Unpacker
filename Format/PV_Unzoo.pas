@@ -11,7 +11,7 @@ unit PV_Unzoo;
 interface
 
 uses
-  Classes, SysUtils, PV_Unpack, Dialogs;
+  Classes, SysUtils, PV_Unpack, CRC16_ARC, Dialogs;
 
   { TUnPak }
 
@@ -67,6 +67,7 @@ begin
   inherited Create(Str);
 
   FStream := Str;
+  FHasherClass := THasherCRC16_ARC;
 
   try
     FStream.Read(Head, SizeOf(Head));

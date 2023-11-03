@@ -10,7 +10,7 @@ unit PV_Unlzh;
 interface
 
 uses
-  Classes, SysUtils, PV_Unpack, Dialogs;
+  Classes, SysUtils, PV_Unpack, CRC16_ARC, Dialogs;
 
   { TUntar }
 
@@ -55,6 +55,7 @@ begin
   inherited Create(Str);
 
   FStream := Str;
+  FHasherClass := THasherCRC16_ARC;
 
   try
     while True do begin

@@ -11,7 +11,7 @@ unit PV_Unace;
 interface
 
 uses
-  Classes, SysUtils, PV_Unpack, Dialogs;
+  Classes, SysUtils, PV_Unpack, CRC32_JAMCRC, Dialogs;
 
   { TUnPak }
 
@@ -75,6 +75,7 @@ begin
   inherited Create(Str);
 
   FStream := Str;
+  FHasherClass := THasherCRC32_JAMCRC;
 
   try
     while FStream.Position < FStream.Size do begin

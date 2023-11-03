@@ -11,7 +11,7 @@ unit PV_Unegg;
 interface
 
 uses
-  Classes, SysUtils, PV_Unpack, Dialogs;
+  Classes, SysUtils, PV_Unpack, CRC32_ISOHDLC, Dialogs;
 
   { TUnPak }
 
@@ -80,6 +80,8 @@ begin
   inherited Create(Str);
 
   FStream := Str;
+  FHasherClass := THasherCRC32_ISOHDLC;
+
   FName := '';
 
   try

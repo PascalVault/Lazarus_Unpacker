@@ -11,7 +11,7 @@ unit PV_Ungzip;
 interface
 
 uses
-  Classes, SysUtils, PV_Unpack, Dialogs;
+  Classes, SysUtils, PV_Unpack, CRC32_ISOHDLC, Dialogs;
 
   { TUnPak }
 
@@ -59,6 +59,7 @@ begin
   inherited Create(Str);
 
   FStream := Str;
+  FHasherClass := THasherCRC32_ISOHDLC;
 
   try
     FStream.Read(Head, SizeOf(Head));

@@ -10,7 +10,7 @@ unit PV_Unrar;
 interface
 
 uses
-  Classes, SysUtils, PV_Unpack;
+  Classes, SysUtils, PV_Unpack, CRC32_ISOHDLC;
 
 type
   { TUnrar }
@@ -55,9 +55,9 @@ begin
   inherited Create(Str);
 
   FStream := Str;
+  FHasherClass := THasherCRC32_ISOHDLC;
 
   try
-
     while True do begin
 
       FStream.Read(Vol, SizeOf(Vol));

@@ -11,7 +11,7 @@ unit PV_Unalz;
 interface
 
 uses
-  Classes, SysUtils, PV_Unpack, Dialogs;
+  Classes, SysUtils, PV_Unpack, CRC32_ISOHDLC, Dialogs;
 
   { TUnPak }
 
@@ -55,9 +55,9 @@ begin
   inherited Create(Str);
 
   FStream := Str;
+  FHasherClass := THasherCRC32_ISOHDLC;
 
   try
-
     while FStream.Position < FStream.Size do begin
 
       FStream.Read(Entry, SizeOf(Entry));
