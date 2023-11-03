@@ -1,0 +1,118 @@
+object InfoForm: TInfoForm
+  Left = 569
+  Height = 236
+  Top = 203
+  Width = 313
+  Caption = 'Info'
+  ClientHeight = 236
+  ClientWidth = 313
+  LCLVersion = '2.2.2.0'
+  object Label1: TLabel
+    Left = 24
+    Height = 15
+    Top = 24
+    Width = 120
+    AutoSize = False
+    Caption = 'Archive'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 160
+    Height = 15
+    Top = 24
+    Width = 120
+    AutoSize = False
+    Caption = '---'
+    ParentColor = False
+  end
+  object Label3: TLabel
+    Left = 24
+    Height = 15
+    Top = 56
+    Width = 120
+    AutoSize = False
+    Caption = 'Format'
+    ParentColor = False
+  end
+  object Label4: TLabel
+    Left = 160
+    Height = 15
+    Top = 56
+    Width = 120
+    AutoSize = False
+    Caption = '---'
+    ParentColor = False
+  end
+  object Label5: TLabel
+    Left = 24
+    Height = 15
+    Top = 88
+    Width = 120
+    AutoSize = False
+    Caption = 'Files'
+    ParentColor = False
+  end
+  object Label6: TLabel
+    Left = 160
+    Height = 15
+    Top = 88
+    Width = 120
+    AutoSize = False
+    Caption = '---'
+    ParentColor = False
+  end
+  object Label7: TLabel
+    Left = 24
+    Height = 15
+    Top = 120
+    Width = 120
+    AutoSize = False
+    Caption = 'Compressed size'
+    ParentColor = False
+  end
+  object Label8: TLabel
+    Left = 160
+    Height = 15
+    Top = 120
+    Width = 120
+    AutoSize = False
+    Caption = '---'
+    ParentColor = False
+  end
+  object Label9: TLabel
+    Left = 24
+    Height = 15
+    Top = 152
+    Width = 120
+    AutoSize = False
+    Caption = 'Uncompressed size'
+    ParentColor = False
+  end
+  object Label10: TLabel
+    Left = 160
+    Height = 15
+    Top = 152
+    Width = 120
+    AutoSize = False
+    Caption = '---'
+    ParentColor = False
+  end
+  object Label11: TLabel
+    Left = 24
+    Height = 15
+    Top = 184
+    Width = 120
+    AutoSize = False
+    Caption = 'Ratio'
+    ParentColor = False
+  end
+  object Label12: TLabel
+    Left = 160
+    Height = 15
+    Top = 184
+    Width = 120
+    AutoSize = False
+    Caption = '---'
+    ParentColor = False
+  end
+end
