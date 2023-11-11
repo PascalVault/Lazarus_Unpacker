@@ -77,12 +77,31 @@ begin
       AFile.ModDate := Dos2DateTime(Head.ModTime, Head.ModDate);
       AFile.CRC32 := Head.CRC32;
 
+//if Head.GeneralFlag and 1 = 1 then 
+//AFile.Encryption := enZipCrypto;
+
       case Head.Compression of
         0  : AFile.PackMethod := pmStore;
+        1  : AFile.PackMethod := pmShrink;
+
+        2  : AFile.PackMethod := pmReduce1;
+        3  : AFile.PackMethod := pmReduce2;
+        4  : AFile.PackMethod := pmReduce3;
+        5  : AFile.PackMethod := pmReduce4;
+
+        6  : AFile.PackMethod := pmImplode2;
         8  : AFile.PackMethod := pmDeflate;
+        10 : AFile.PackMethod := pmDCLImplode;
         12 : AFile.PackMethod := pmBzip2;
         14 : AFile.PackMethod := pmLzma;
         else AFile.PackMethod := pmOther;
+      end;
+
+      if AFile.PackMethod = pmImplode2 then begin
+        if (Head.GeneralFlag and $02) <> 0 then AFile.Extra := 8
+        else                                    AFile.Extra := 4;
+
+        if (Head.GeneralFlag and $04) <> 0 then AFile.PackMethod := pmImplode3;
       end;
 
       AddFile(AFile);

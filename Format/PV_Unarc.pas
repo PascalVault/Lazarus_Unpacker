@@ -76,8 +76,11 @@ begin
       AFile.PackedSize := Entry.PackedSize;
       AFile.UnpackedSize := Entry.UnpackedSize;
 
-      if Head.Method = 2 then AFile.PackMethod := pmStore
-      else                    AFile.PackMethod := pmOther;
+      if Head.Method = 2 then      AFile.PackMethod := pmStore
+      else if Head.Method = 3 then AFile.PackMethod := pmRLE90
+      else                         AFile.PackMethod := pmOther;
+
+      //showmessage(inttostr(head.method));
 
       AFile.ModDate := Dos2DateTime(Entry.FileTime, Entry.FileDate);
       AFile.CRC32 := Entry.CRC16;
