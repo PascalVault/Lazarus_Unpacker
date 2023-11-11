@@ -10,12 +10,15 @@ unit PV_Unpack;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, Math, HasherBase,
+  Classes, SysUtils, DateUtils, Math, HasherBase, ZipCrypto, Implode, Shrink, Reduce, dcl_implode, RLE90,
   ZStream, bzip2stream, ULZMADecoder, LzhHuff, LHA4, DLTUnpack, TxtEncodings, Dialogs;
 
 type
-  TPackMethod = (pmStore, pmDeflate, pmBzip2, pmLh1, pmLh4, pmLh5, pmLh6, pmLh7, pmLhX,
+  TPackMethod = (pmStore, pmDeflate, pmImplode2, pmImplode3, pmShrink, pmReduce1, pmReduce2, pmReduce3, pmReduce4,
+  pmDCLImplode, pmBzip2, pmLh1, pmLh4, pmLh5, pmLh6, pmLh7, pmLhX, pmRLE90,
   pmLzma, pmT64, pmRff, pmUUE, pmXXE, pmB64, pmYenc, pmDLT, pmOther);
+
+  TEncryption = (enNone, enZipCrypto);
 
   TOpResult = (orFail, orOK, orVerified);
 
@@ -27,6 +30,7 @@ type
     CRC32: Cardinal;
     Offset: Cardinal;
     PackMethod: TPackMethod;
+    Encryption: TEncryption;
     Extra: Cardinal;
   end;
 
@@ -66,6 +70,7 @@ type
   public
     constructor Create(Str: TStream; TotalSize: Int64; Hasher: THasherBase);
     function Write(const Buffer; Count: Longint): Longint; override;
+    function Seek(Offset: Longint; Origin: Word): Longint; override;
   end;
 
   function ReadStrNull(Str: TStream): String;
@@ -153,6 +158,11 @@ begin
   Inc(FTotalWritten, Count);
 end;
 
+function TProgressStream.Seek(Offset: Longint; Origin: Word): Longint;
+begin
+  Result:= FStream.Seek(Offset, Origin);
+end;
+
 
 procedure TUnpack.AddFile(AFile: TFile);
 begin
@@ -214,6 +224,12 @@ var Dec: TDecompressionStream;
     Hasher: THasherBase;
     ArchiveCRC, CalcCRC: String;
     ProgStr: TProgressStream;
+    Crypto: TZipCrypto;
+    Implode: TImplode;
+    Shrink: TShrink;
+    Reduce: TReduce;
+    DCL: TDCL_Implode;
+    RLE90: TRLE90;
 begin
   try
     Result := orOK;
@@ -222,8 +238,14 @@ begin
     if FHasherClass <> nil then
     Hasher := FHasherClass.Create;
 
-    ProgStr := TProgressStream.Create(Str, FFiles[Index].UnpackedSize, Hasher);
-
+ //   if FFiles[Index].Encryption = enNone then begin
+      ProgStr := TProgressStream.Create(Str, FFiles[Index].UnpackedSize, Hasher);
+ {   end
+    else if FFiles[Index].Encryption = enZipCrypto then begin
+      ProgStr := TProgressStream.Create(Crypto, FFiles[Index].UnpackedSize, Hasher);
+      Crypto := TZipCrypto.Create(Str, CRC, FFiles[Index].UnpackedSize);
+    end;
+  }
     FStream.Position := FFiles[Index].Offset;
 
     if FFiles[Index].PackMethod = pmDeflate then begin
@@ -238,6 +260,51 @@ begin
       Lzh1 := TLZH.Create(FStream, ProgStr);
       Lzh1.Decode(FFiles[Index].UnpackedSize);
       Lzh1.Free;
+
+    end
+    else if FFiles[Index].PackMethod in [pmImplode2, pmImplode3] then begin
+
+      if FFiles[Index].PackMethod = pmImplode2 then
+        Implode := TImplode.Create(FStream, ProgStr, 2, FFiles[Index].Extra)
+      else
+        Implode := TImplode.Create(FStream, ProgStr, 3, FFiles[Index].Extra);
+
+      Implode.Decode(FFiles[Index].UnpackedSize);
+      Implode.Free;
+
+    end
+    else if FFiles[Index].PackMethod = pmShrink then begin
+
+      Shrink := TShrink.Create(FStream, ProgStr);
+      Shrink.Decode(FFiles[Index].UnpackedSize);
+      Shrink.Free;
+
+    end
+    else if FFiles[Index].PackMethod = pmDCLImplode then begin
+
+      DCL := TDCL_Implode.Create(FStream, ProgStr);
+      DCL.Decode(FFiles[Index].PackedSize, FFiles[Index].UnpackedSize);
+      DCL.Free;
+
+    end
+    else if FFiles[Index].PackMethod in [pmReduce1, pmReduce2, pmReduce3, pmReduce4] then begin
+
+      case FFiles[Index].PackMethod of
+        pmReduce1 : Reduce := TReduce.Create(FStream, ProgStr, 1);
+        pmReduce2 : Reduce := TReduce.Create(FStream, ProgStr, 2);
+        pmReduce3 : Reduce := TReduce.Create(FStream, ProgStr, 3);
+        pmReduce4 : Reduce := TReduce.Create(FStream, ProgStr, 4);
+      end;
+
+      Reduce.Decode(FFiles[Index].UnpackedSize);
+      Reduce.Free;
+
+    end
+    else if FFiles[Index].PackMethod = pmRLE90 then begin
+
+      RLE90 := TRLE90.Create(FStream, ProgStr);
+      RLE90.Decode(FFiles[Index].PackedSize);
+      RLE90.Free;
 
     end
     else if FFiles[Index].PackMethod in [pmLh4, pmLh5, pmLh6, pmLh7, pmLhX] then begin
