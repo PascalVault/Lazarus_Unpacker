@@ -48,7 +48,7 @@ uses PV_Unzip, PV_Untar, PV_Unrar, PV_Unrar5, PV_Unlzh, PV_Unpak, PV_Ungzip, PV_
      PV_Unbzip2, PV_Unbza, PV_Unlod, PV_Unarj, PV_Unftg, PV_Undrs, PV_Unlzma, PV_Unbin, PV_Ungrp, PV_Ungw3, PV_Unhog,
      PV_Unbig, PV_Uncpio, PV_Undpk, PV_Unha, PV_Unlbr, PV_Unpck, PV_Unalz, PV_Unegg, PV_Unlzx, {PV_Unrpm,} PV_Unt64,
      {PV_UnRsc,} PV_UnRff, PV_UnPcl, PV_UnLib, PV_UnLib2, PV_UnGx, PV_UnEpf, PV_UnDlt, PV_UnDat, PV_Unxxe, PV_Unuue,
-     PV_Unarc, PV_Unzoo, PV_Unyenc, PV_Unb64, PV_Unace, PV_Unar;
+     PV_Unarc, PV_Unzoo, PV_Unyenc, PV_Unb64, PV_Unace, PV_Unar, PV_Unsq, PV_Unz;
 
 function TUnpacker.Detect(Buff: array of Byte): TUnpackClass;
 
@@ -171,8 +171,12 @@ begin
 
   if (Buff[  0] = 0       ) and (Buff[  1] = ord(' ')) and (Buff[ 2] = ord(' ')) and (Buff[ 3] = ord(' ')) then Exit(TUnlbr);
 
+
+  if (Buff[  0] = $1F) and (Buff[  1] = $9D) then Exit(TUnZ);
+
   if (Buff[  0] < 5*5*9   ) and (Buff[ 13] = 0) and (isLZMA(Buff[1], Buff[2], Buff[3], Buff[4])) then Exit(TUnlzma);
 
+  if (Buff[  0] = $76) and (Buff[  1] = $FF) then Exit(TUnSQ);
 
   if (Buff[  0] = ord('B')) and (Buff[  1] = ord('a')) and (Buff[ 2] = ord('s')) and (Buff[ 3] = ord('e')) then Exit(TUnB64);
 

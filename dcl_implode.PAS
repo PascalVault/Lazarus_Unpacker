@@ -4,7 +4,8 @@ unit dcl_implode;
 
 //Based on implode.c from "Lawine library" by ax.minaduki@gmail.com (May 2010)
 //PKWare DCL implode compression
-//License: GNU LGPL
+//https://github.com/PascalVault/Lazarus_Unpacker
+//License changed from GNU LGPL to MIT with consent from ax.minaduki.
 
 interface
 

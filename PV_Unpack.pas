@@ -5,17 +5,18 @@ unit PV_Unpack;
 //PV Unpack
 //https://github.com/PascalVault
 //Licence: MIT
-//Last update: 2023-10-19
+//Last update: 2023-11-13
 
 interface
 
 uses
-  Classes, SysUtils, DateUtils, Math, HasherBase, ZipCrypto, Implode, Shrink, Reduce, dcl_implode, RLE90,
-  ZStream, bzip2stream, ULZMADecoder, LzhHuff, LHA4, DLTUnpack, TxtEncodings, Dialogs;
+  Classes, SysUtils, DateUtils, Math, HasherBase, ZipCrypto, Implode, Shrink, Reduce, dcl_implode, RLE90, LZW,
+  ArcMethod,
+  Squeeze, ZStream, bzip2stream, ULZMADecoder, LzhHuff, LHA4, DLTUnpack, TxtEncodings, Dialogs;
 
 type
   TPackMethod = (pmStore, pmDeflate, pmImplode2, pmImplode3, pmShrink, pmReduce1, pmReduce2, pmReduce3, pmReduce4,
-  pmDCLImplode, pmBzip2, pmLh1, pmLh4, pmLh5, pmLh6, pmLh7, pmLhX, pmRLE90,
+  pmDCLImplode, pmBzip2, pmLh1, pmLh4, pmLh5, pmLh6, pmLh7, pmLhX, pmRLE90, pmSqueeze, pmCrunch8, pmSquash, pmSquashLZW,
   pmLzma, pmT64, pmRff, pmUUE, pmXXE, pmB64, pmYenc, pmDLT, pmOther);
 
   TEncryption = (enNone, enZipCrypto);
@@ -230,6 +231,10 @@ var Dec: TDecompressionStream;
     Reduce: TReduce;
     DCL: TDCL_Implode;
     RLE90: TRLE90;
+    SQ: TSqueeze;
+    Sqs: TSquash;
+    Cru: TCrunch8;
+    LZW: TLZW;
 begin
   try
     Result := orOK;
@@ -305,6 +310,36 @@ begin
       RLE90 := TRLE90.Create(FStream, ProgStr);
       RLE90.Decode(FFiles[Index].PackedSize);
       RLE90.Free;
+
+    end
+    else if FFiles[Index].PackMethod = pmSqueeze then begin
+
+      SQ := TSqueeze.Create(FStream, ProgStr);
+      SQ.Decode(FFiles[Index].PackedSize);
+      SQ.Free;
+
+    end
+    else if FFiles[Index].PackMethod = pmSquash then begin
+
+      Sqs := TSquash.Create(FStream, ProgStr);
+      Sqs.Decode(FFiles[Index].PackedSize);
+      Sqs.Free;
+
+    end
+    else if FFiles[Index].PackMethod = pmSquashLZW then begin
+      //this should be exactly the same as Squash but there must be a small difference in implementation somewhere,
+      //some parameter or something must be different
+
+      LZW := TLZW.Create(FStream, ProgStr);
+      LZW.Decode(FFiles[Index].Extra, FFiles[Index].PackedSize);
+      LZW.Free;
+
+    end
+    else if FFiles[Index].PackMethod = pmCrunch8 then begin
+
+      Cru := TCrunch8.Create(FStream, ProgStr);
+      Cru.Decode(FFiles[Index].PackedSize);
+      Cru.Free;
 
     end
     else if FFiles[Index].PackMethod in [pmLh4, pmLh5, pmLh6, pmLh7, pmLhX] then begin
