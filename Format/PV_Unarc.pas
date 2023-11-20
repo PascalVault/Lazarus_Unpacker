@@ -50,6 +50,7 @@ type THead = packed record
        FileTime: Word;
        CRC16: Word;
        UnpackedSize: Cardinal;
+//total 29 bytes
     end;
 
 var Entry: TEntry;
@@ -71,16 +72,20 @@ begin
 
       FStream.Read(Entry, SizeOf(Entry));
 
-      AFile.Name := Entry.FName;
+      AFile.Name := Entry.FName;// + '      [[' + inttostr(head.method);
       AFile.Offset := FStream.Position;
       AFile.PackedSize := Entry.PackedSize;
       AFile.UnpackedSize := Entry.UnpackedSize;
 
       if Head.Method = 2 then      AFile.PackMethod := pmStore
       else if Head.Method = 3 then AFile.PackMethod := pmRLE90
+      else if Head.Method = 4 then AFile.PackMethod := pmSqueeze
+      else if Head.Method = 8 then AFile.PackMethod := pmCrunch8
+      else if Head.Method = 9 then AFile.PackMethod := pmSquash
       else                         AFile.PackMethod := pmOther;
 
-      //showmessage(inttostr(head.method));
+//      if not (head.method in [2,8,9]) then
+ //     showmessage(inttostr(head.method));
 
       AFile.ModDate := Dos2DateTime(Entry.FileTime, Entry.FileDate);
       AFile.CRC32 := Entry.CRC16;
